@@ -37,6 +37,7 @@ import (
 
 var failedTC = make(map[string]int)
 var logsDir string
+var exitCode int
 
 type execute interface {
 	Execute() error
@@ -217,6 +218,7 @@ func (l *Launcher) LaunchExecute(workerPool chan struct{}, e execute) {
 				statusquo.TestCasesFailed++
 				logger.Error("test case:", strings.Fields(err.Error())[2], "failed")
 				l.failedTCAfterRetry.Write([]byte(tcWithNewLine))
+				exitCode = 1
 			}
 		}
 	}
@@ -256,6 +258,8 @@ func LaunchInitiate(commands []string, configDir string, queueLength, retry int)
 
 	// report generation
 	report.GenerateSummary(configDir)
+
+	os.Exit(exitCode)
 }
 
 // suffix epoch time for the file name
