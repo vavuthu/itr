@@ -29,10 +29,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vavuthu/itr/logger"
+	"github.com/vavuthu/itr/cmd/mail"
 	"github.com/vavuthu/itr/cmd/payload"
 	"github.com/vavuthu/itr/cmd/report"
 	"github.com/vavuthu/itr/cmd/statusquo"
+	"github.com/vavuthu/itr/config"
+	"github.com/vavuthu/itr/logger"
 )
 
 var failedTC = make(map[string]int)
@@ -218,7 +220,7 @@ func (l *Launcher) LaunchExecute(workerPool chan struct{}, e execute) {
 				statusquo.TestCasesFailed++
 				logger.Error("test case:", strings.Fields(err.Error())[2], "failed")
 				l.failedTCAfterRetry.Write([]byte(tcWithNewLine))
-				exitCode = 1
+				exitCode = 3
 			}
 		}
 	}
@@ -252,12 +254,22 @@ func LaunchInitiate(commands []string, configDir string, queueLength, retry int)
 	launch.failedTCAfterRetry, _ = os.Create(failedTCAfterRetryFile)
 	defer launch.failedTCAfterRetry.Close()
 
+	startTime := time.Now()
 	// Execute commands
 	launch.LaunchCommands(queueLength, retry)
 	wg1.Wait()
 
+	endTime := time.Now()
+	totalTime := endTime.Sub(startTime)
+
 	// report generation
 	report.GenerateSummary(configDir)
+	report.GenerateHTMLReport(configDir, totalTime)
+
+	if config.AppConfig.EmailID != "" {
+		mail.SendMail()
+		logger.Info("Email sent successfully to ", config.AppConfig.EmailID)
+	}
 
 	os.Exit(exitCode)
 }

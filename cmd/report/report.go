@@ -19,14 +19,17 @@ package report
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	"github.com/vavuthu/itr/config"
 	"github.com/vavuthu/itr/cmd/statusquo"
 	"github.com/vavuthu/itr/cmd/utils"
 	"github.com/vavuthu/itr/logger"
@@ -94,7 +97,75 @@ func GenerateSummary(configDir string) {
 	logger.Info("Skipped: ", totalTCSkipped)
 	logger.Info("###############################################################")
 
-	t.Render()	
+	t.Render()
+}
+
+// GenerateHTMLReport generates the HTML report
+func GenerateHTMLReport(configDir string, totalTime time.Duration) {
+
+	passedFilePath := filepath.Join(configDir, passed)
+	failedFilePath := filepath.Join(configDir, failed)
+	skippedFilePath := filepath.Join(configDir, skipped)
+
+	// Generate HTML content
+	passedTests, _ := readLines(passedFilePath)
+	skippedTests, _ := readLines(skippedFilePath)
+	failedTests, _ := readLines(failedFilePath)
+
+	htmlContent := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Summary</title>
+</head>
+<body>
+    <h1>Summary</h1>
+    <p>%d tests ran in %.2f minutes</p>
+    <p>%d passed, %d skipped, %d failed</p>
+    <table border="1">
+        <tr>
+            <th>Test</th>
+            <th>Result</th>
+        </tr>
+`, statusquo.TotalTestCases, totalTime.Minutes(), totalTCPassed, totalTCSkipped, totalTCFailed)
+
+	for _, test := range passedTests {
+		htmlContent += fmt.Sprintf(`
+        <tr>
+            <td>%s</td>
+            <td>Passed</td>
+        </tr>
+`, test)
+	}
+
+	for _, test := range skippedTests {
+		htmlContent += fmt.Sprintf(`
+        <tr>
+            <td>%s</td>
+            <td>Skipped</td>
+        </tr>
+`, test)
+	}
+
+	for _, test := range failedTests {
+		htmlContent += fmt.Sprintf(`
+        <tr>
+            <td>%s</td>
+            <td>Failed</td>
+        </tr>
+`, test)
+	}
+
+	htmlContent += `
+    </table>
+</body>
+</html>
+`
+	// Write the HTML content to a file
+	htmlReport := "report_" + config.AppConfig.RunID + ".html"
+	os.WriteFile(htmlReport, []byte(htmlContent), 0644)
+	logger.Infof("HTML file '%s' generated successfully.", htmlReport)
+
 }
 
 // processFile reads a file and adds rows to the table with the corresponding status color
@@ -125,4 +196,25 @@ func processFile(t table.Writer, filePath string, status string) {
 func unicodeTitle(s string) string {
 	title := cases.Title(language.Und)
 	return title.String(s)
+}
+
+
+func readLines(filename string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return lines, nil
 }
