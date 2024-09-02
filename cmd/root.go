@@ -18,11 +18,13 @@ package cmd
 
 import (
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/vavuthu/itr/cmd/engine"
 	"github.com/vavuthu/itr/cmd/validate"
+	"github.com/vavuthu/itr/config"
 	"github.com/vavuthu/itr/logger"
 )
 
@@ -38,6 +40,7 @@ var rootCmd = &cobra.Command{
 
 var (
 	configDir			string
+	email				string
 	executionFile 		string
 	image 				string
 	junitXML 			bool
@@ -45,6 +48,7 @@ var (
 	positiveTestCases 	string
 	queueLength 		int
 	retry 				int
+	subject			    string
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -71,6 +75,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&configDir, "config_dir", "c", "", "path to external configuration files that are passed to test framework")
 	rootCmd.Flags().IntVarP(&queueLength, "queue-length", "q", 5, "Queue length, number of test cases to run parallelly")
 	rootCmd.Flags().IntVarP(&retry, "retry", "r", 0, "number of times to retry the failed test cases")
+	rootCmd.Flags().StringVarP(&email, "email", "m", "", "email to send reports")
+	rootCmd.Flags().StringVarP(&subject, "subject", "s", "", "email subject")
 	rootCmd.PersistentFlags().BoolVarP(&junitXML, "junit-xml", "j", false, "Generate JUnit XML report")
 	rootCmd.MarkFlagRequired("image")
 	cobra.OnInitialize(validateFlags)
@@ -79,6 +85,7 @@ func init() {
 
 func runCmd(cmd *cobra.Command, args []string) {
 	logger.Infof("Queue length: %d", queueLength)
+	config.InitializeConfig(getRetry(), getEmail(), getRunID(), getConfigDir(), getSubject())
 	engine.RunEngine(executionFile, configDir, positiveTestCases, negativeTestCases, image, queueLength, retry, junitXML)
 }
 
@@ -88,4 +95,26 @@ func validateFlags() {
 		logger.Errorf("An error occurred: %v", err)
 		os.Exit(1)
 	}
+}
+
+func getConfigDir() string {
+	return configDir
+}
+
+func getEmail() string {
+	return email
+}
+
+func getRetry() int {
+	return retry
+}
+
+func getRunID() string {
+	currentTime := time.Now()
+	timestamp := currentTime.Format("2019-02-09_17-50-01")
+	return timestamp
+}
+
+func getSubject() string {
+	return subject
 }
