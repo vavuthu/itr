@@ -19,6 +19,7 @@ package report
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,12 +27,13 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"golang.org/x/net/html"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/vavuthu/itr/config"
 	"github.com/vavuthu/itr/cmd/statusquo"
 	"github.com/vavuthu/itr/cmd/utils"
+	"github.com/vavuthu/itr/config"
 	"github.com/vavuthu/itr/logger"
 )
 
@@ -39,6 +41,7 @@ const (
 	passed = "passed_testcases.txt"
 	failed = "failed_final_testcases.txt"
 	skipped = "skipped_testcases.txt"
+	testReport = "test_report.html"
 )
 
 var (
@@ -107,27 +110,99 @@ func GenerateHTMLReport(configDir string, totalTime time.Duration) {
 	failedFilePath := filepath.Join(configDir, failed)
 	skippedFilePath := filepath.Join(configDir, skipped)
 
-	// Generate HTML content
 	passedTests, _ := readLines(passedFilePath)
 	skippedTests, _ := readLines(skippedFilePath)
 	failedTests, _ := readLines(failedFilePath)
 
+	envMap := make(map[string]string)
+
+	// check test_report.html exists or not
+	testReportFilePath := filepath.Join(configDir, testReport)
+	istestReportFilePathExist := utils.CheckFileExists(testReportFilePath)
+	if istestReportFilePathExist {
+		reportContent, err := os.ReadFile(testReportFilePath)
+		if err != nil {
+			logger.Errorf("Failed to read %s file", testReportFilePath)
+		} else {
+			doc, err := html.Parse(bytes.NewReader(reportContent))
+			if err != nil {
+				logger.Errorf("Failed to parse html file %s", testReportFilePath)
+			} else {
+				// Function to traverse the DOM and extract keys and values from the Environment section
+				var extractKeyValues func(*html.Node)
+				extractKeyValues = func(n *html.Node) {
+					if n.Type == html.ElementNode && n.Data == "table" {
+						// Check if this is the "environment" table
+						for _, attr := range n.Attr {
+							if attr.Key == "id" && attr.Val == "environment" {
+								for c := n.FirstChild; c != nil; c = c.NextSibling {
+									if c.Type == html.ElementNode && c.Data == "tbody" {
+										for tr := c.FirstChild; tr != nil; tr = tr.NextSibling {
+											if tr.Type == html.ElementNode && tr.Data == "tr" {
+												var key, value string
+												for td := tr.FirstChild; td != nil; td = td.NextSibling {
+													if td.Type == html.ElementNode && td.Data == "td" {
+														if key == "" {
+															key = td.FirstChild.Data
+														} else {
+															value = td.FirstChild.Data
+														}
+													}
+												}
+												// Store the key-value pair in the map
+												envMap[key] = value
+											}
+										}
+									}
+								}
+								return // Exit after processing the environment table
+							}
+						}
+					}
+					// Traverse the rest of the tree
+					for c := n.FirstChild; c != nil; c = c.NextSibling {
+						extractKeyValues(c)
+					}
+				}
+				// Start extraction
+				extractKeyValues(doc)
+			}
+		}
+	}
+
+	// Generate HTML content
 	htmlContent := fmt.Sprintf(`
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Test Summary</title>
-</head>
-<body>
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<title>Test Summary</title>
+	</head>
+	<body>
     <h1>Summary</h1>
     <p>%d tests ran in %.2f minutes</p>
     <p>%d passed, %d skipped, %d failed</p>
-    <table border="1">
+	<h2>Environment</h2>
+	<table border="1" id="environment">
+	`, statusquo.TotalTestCases, totalTime.Minutes(), totalTCPassed, totalTCSkipped, totalTCFailed)
+
+	for key, value := range envMap {
+		htmlContent += fmt.Sprintf(`
+        <tr>
+            <td>%s</td>
+            <td>%s</td>
+        </tr>
+		`, key, value)
+	}
+
+	htmlContent += `
+    </table>
+	<h2>Results</h2>
+    <table border="1" id="results-table">
         <tr>
             <th>Test</th>
             <th>Result</th>
         </tr>
-`, statusquo.TotalTestCases, totalTime.Minutes(), totalTCPassed, totalTCSkipped, totalTCFailed)
+	`
 
 	for _, test := range passedTests {
 		htmlContent += fmt.Sprintf(`
@@ -135,7 +210,7 @@ func GenerateHTMLReport(configDir string, totalTime time.Duration) {
             <td>%s</td>
             <td>Passed</td>
         </tr>
-`, test)
+		`, test)
 	}
 
 	for _, test := range skippedTests {
@@ -144,7 +219,7 @@ func GenerateHTMLReport(configDir string, totalTime time.Duration) {
             <td>%s</td>
             <td>Skipped</td>
         </tr>
-`, test)
+		`, test)
 	}
 
 	for _, test := range failedTests {
@@ -153,14 +228,14 @@ func GenerateHTMLReport(configDir string, totalTime time.Duration) {
             <td>%s</td>
             <td>Failed</td>
         </tr>
-`, test)
+		`, test)
 	}
 
 	htmlContent += `
     </table>
-</body>
-</html>
-`
+	</body>
+	</html>
+	`
 	// Write the HTML content to a file
 	htmlReport := "report_" + config.AppConfig.RunID + ".html"
 	os.WriteFile(htmlReport, []byte(htmlContent), 0644)
