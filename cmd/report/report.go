@@ -145,7 +145,16 @@ func GenerateHTMLReport(configDir string, totalTime time.Duration) {
 														if key == "" {
 															key = td.FirstChild.Data
 														} else {
-															value = td.FirstChild.Data
+															if td.FirstChild != nil && td.FirstChild.Type == html.ElementNode && td.FirstChild.Data == "a" {
+																// Handle the anchor tag case and extract the hyperlink
+																for _, attr := range td.FirstChild.Attr {
+																	if attr.Key == "href" {
+																		value = attr.Val // Get the href value
+																	}
+																}
+															} else {
+																value = td.FirstChild.Data
+															}
 														}
 													}
 												}
