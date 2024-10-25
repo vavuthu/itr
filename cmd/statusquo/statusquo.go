@@ -28,6 +28,7 @@ import (
 var (
 	TestCasesPassed 	int
 	TestCasesFailed 	int
+	TestCasesNotSelected int
 	TotalTestCases 		int
 )
 
@@ -51,10 +52,11 @@ func Statusquo(wg *sync.WaitGroup) {
 
 func printStatus() {
 	tcRunning := runtime.NumGoroutine() - 2
-	toExecute := TotalTestCases - TestCasesPassed - TestCasesFailed - tcRunning
+	toExecute := TotalTestCases - TestCasesPassed - TestCasesFailed - TestCasesNotSelected - tcRunning
 	logger.Info("Total Test cases:", TotalTestCases)
 	logger.Info("Passed:", TestCasesPassed)
 	logger.Info("Failed:", TestCasesFailed)
+	logger.Info("Not selected:", TestCasesNotSelected)
 	logger.Info("Test cases running:", tcRunning)
 	logger.Info("To Execute:", toExecute)
 }

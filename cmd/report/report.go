@@ -41,6 +41,7 @@ const (
 	passed = "passed_testcases.txt"
 	failed = "failed_final_testcases.txt"
 	skipped = "skipped_testcases.txt"
+	notSelected = "no_testcases_selected.txt"
 	testReport = "test_report.html"
 )
 
@@ -48,6 +49,8 @@ var (
 	totalTCPassed int
 	totalTCFailed int
 	totalTCSkipped int
+	totalTCNotSelected int
+
 )
 
 func GenerateSummary(configDir string) {
@@ -56,12 +59,14 @@ func GenerateSummary(configDir string) {
 	passedFilePath := filepath.Join(configDir, passed)
 	failedFilePath := filepath.Join(configDir, failed)
 	skippedFilePath := filepath.Join(configDir, skipped)
+	notSelectedFilepath := filepath.Join(configDir, notSelected)
 
 	// Create a map to hold the different statuses
 	statuses := map[string]string{
 		"Passed":  text.Colors{text.FgGreen}.Sprint("Passed"),
 		"Failed":  text.Colors{text.FgRed}.Sprint("Failed"),
 		"Skipped": text.Colors{text.FgYellow}.Sprint("Skipped"),
+		"NotSelected": text.Colors{text.FgYellow}.Sprint("NotSelected"),
 	}
 
 	// Create a new table
@@ -94,10 +99,17 @@ func GenerateSummary(configDir string) {
 		processFile(t, skippedFilePath, statuses["Skipped"])
 	}
 
+	isNotSelectedFilePathExist := utils.CheckFileExists(notSelectedFilepath)
+	if isNotSelectedFilePathExist {
+		totalTCNotSelected, _ = utils.CountLines([]string{notSelectedFilepath})
+		processFile(t, notSelectedFilepath, statuses["NotSelected"])
+	}
+
 	logger.Info("Total Test cases: ", statusquo.TotalTestCases)
 	logger.Info("Passed: ", totalTCPassed)
 	logger.Info("Failed: ", totalTCFailed)
 	logger.Info("Skipped: ", totalTCSkipped)
+	logger.Info("NotSelected: ", totalTCNotSelected)
 	logger.Info("###############################################################")
 
 	t.Render()
@@ -109,10 +121,12 @@ func GenerateHTMLReport(configDir string, totalTime time.Duration) {
 	passedFilePath := filepath.Join(configDir, passed)
 	failedFilePath := filepath.Join(configDir, failed)
 	skippedFilePath := filepath.Join(configDir, skipped)
+	notSelectedFilepath := filepath.Join(configDir, notSelected)
 
 	passedTests, _ := readLines(passedFilePath)
 	skippedTests, _ := readLines(skippedFilePath)
 	failedTests, _ := readLines(failedFilePath)
+	notSelectedTests, _ := readLines(notSelectedFilepath)
 
 	envMap := make(map[string]string)
 
@@ -189,10 +203,10 @@ func GenerateHTMLReport(configDir string, totalTime time.Duration) {
 	<body>
     <h1>Summary</h1>
     <p>%d tests ran in %.2f minutes</p>
-    <p>%d passed, %d skipped, %d failed</p>
+    <p>%d passed, %d skipped, %d failed, %d not selected</p>
 	<h2>Environment</h2>
 	<table border="1" id="environment">
-	`, statusquo.TotalTestCases, totalTime.Minutes(), totalTCPassed, totalTCSkipped, totalTCFailed)
+	`, statusquo.TotalTestCases, totalTime.Minutes(), totalTCPassed, totalTCSkipped, totalTCFailed, totalTCNotSelected)
 
 	for key, value := range envMap {
 		htmlContent += fmt.Sprintf(`
@@ -236,6 +250,15 @@ func GenerateHTMLReport(configDir string, totalTime time.Duration) {
         <tr>
             <td>%s</td>
             <td>Failed</td>
+        </tr>
+		`, test)
+	}
+
+	for _, test := range notSelectedTests {
+		htmlContent += fmt.Sprintf(`
+        <tr>
+            <td>%s</td>
+            <td>NotSelected</td>
         </tr>
 		`, test)
 	}
