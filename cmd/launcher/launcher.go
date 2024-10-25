@@ -41,6 +41,9 @@ var failedTC = make(map[string]int)
 var logsDir string
 var exitCode int
 
+const noTestcasesSelected = "no_testcases_selected.txt"
+
+
 type execute interface {
 	Execute() error
 }
@@ -60,6 +63,7 @@ func (c *Command) Execute() error  {
 	s := payload.LastString(strings.Split(c.cmd, "::"))
 	testCaseName := strings.Split(s, " ")[0]
 	logFile := filepath.Join(logsDir, testCaseName)
+	noTestcasesSelectedFilepath := filepath.Join(logsDir, noTestcasesSelected)
 
 	// Open a file for writing (create it if not exists, truncate if exists)
 	outputFile, err := os.Create(logFile)
@@ -101,7 +105,25 @@ func (c *Command) Execute() error  {
 	}
 
 	err = podmanCmd.Wait()
-	if err != nil {
+	if err != nil && err.Error() == "exit status 5" {
+		statusquo.TestCasesNotSelected++
+		logger.Infof("logfilename: %s", testCase)
+
+		// Open the file with flags for appending, creating if necessary, and setting the correct permissions
+		file, err := os.OpenFile(noTestcasesSelectedFilepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			logger.Errorf("failed opening file %s: %s", noTestcasesSelected, err)
+		}
+		defer file.Close()
+
+		// Write the data to the file
+		_, err = file.WriteString(testCase + "\n")
+		if err != nil {
+			logger.Errorf("failed writing to file: %s", err)
+		}
+
+		return nil
+	} else if err != nil {
 		logger.Errorf("Error in waiting for command %v and test case is %s", err, testCase)
 		if c.retriesLeft() > 0 {
 			logFileName := outputFile.Name()
