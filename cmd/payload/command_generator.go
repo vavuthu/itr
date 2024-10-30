@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	prefix = "podman run --rm -v "
+	prefix = "podman run -e BUILD_NUMBER -e BUILD_TAG -e BUILD_URL -e JOB_NAME -e NODE_NAME -e WORKSPACE --rm -v "
 	PodmanPath = "/opt/cluster"
 	podmanSharedMountOption = "z "
 	redirectionOperator = " >"
