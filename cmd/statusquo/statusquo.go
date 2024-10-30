@@ -33,20 +33,28 @@ var (
 )
 
 // status quo for the test case execution
-func Statusquo(wg *sync.WaitGroup) {
+func Statusquo(wg *sync.WaitGroup, stopChannel <-chan bool) {
 	defer func()  {
 		wg.Done()
 	}()
 
+	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
+
 	for {
-		time.Sleep(60 * time.Second)
-		// main function and Statusquo are the goroutines
-		// exit if there is no test case execution
-		if runtime.NumGoroutine() == 2 {
+		select {
+		case <-stopChannel:
 			printStatus()
-			break
+			return
+		case <-ticker.C:
+			// main function and Statusquo are the goroutines
+			// exit if there is no test case execution
+			if runtime.NumGoroutine() == 2 {
+				printStatus()
+				return
+			}
+			printStatus()
 		}
-		printStatus()
 	}
 }
 

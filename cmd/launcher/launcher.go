@@ -168,7 +168,7 @@ type Launcher struct {
 	wg                     sync.WaitGroup
 }
 
-func (l *Launcher) LaunchCommands(queueLength, retry int) {
+func (l *Launcher) LaunchCommands(queueLength, retry int, stopChannel chan<- bool) {
 	workerPool := make(chan struct{}, queueLength)
 
 	// Infinite loop to run commands till payload is completed
@@ -192,6 +192,8 @@ func (l *Launcher) LaunchCommands(queueLength, retry int) {
 			}
 			if len(failedTC) == 0 && runtime.NumGoroutine() == 2 {
 				logger.Info("All the test cases are executed")
+				// Send stop signal
+				stopChannel <- true
 				break
 			}
 
@@ -268,9 +270,11 @@ func LaunchInitiate(commands []string, configDir string, queueLength, retry int)
 	launch.payloadLock.Unlock()
 	
 	// statusquo
+	// Channel to signal stopping the Statusquo goroutine
+	stopChannel := make(chan bool)
 	var wg1 sync.WaitGroup
 	wg1.Add(1)
-	go statusquo.Statusquo(&wg1)
+	go statusquo.Statusquo(&wg1, stopChannel)
 	
 	failedTCAfterRetryFile := filepath.Join(logsDir, "failed_final_testcases.txt")
 	launch.failedTCAfterRetry, _ = os.Create(failedTCAfterRetryFile)
@@ -278,7 +282,7 @@ func LaunchInitiate(commands []string, configDir string, queueLength, retry int)
 
 	startTime := time.Now()
 	// Execute commands
-	launch.LaunchCommands(queueLength, retry)
+	launch.LaunchCommands(queueLength, retry, stopChannel)
 	wg1.Wait()
 
 	endTime := time.Now()
