@@ -72,7 +72,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&disruptiveTestCases, "disruptive-testcases", "d", "", "Path to disruptive test cases to run")
 	rootCmd.Flags().StringVarP(&executionFile, "execution", "e", "", "how to execute the test cases")
 	rootCmd.Flags().StringVarP(&image, "image", "i", "", "image name of test framework that should exist in system")
-	rootCmd.Flags().StringVarP(&configDir, "config_dir", "c", "", "path to external configuration files that are passed to test framework")
+	rootCmd.Flags().StringVarP(&configDir, "config-dir", "c", "", "path to external configuration files that are passed to test framework")
 	rootCmd.Flags().IntVarP(&queueLength, "queue-length", "q", 5, "Queue length, number of test cases to run parallelly")
 	rootCmd.Flags().IntVarP(&retry, "retry", "r", 0, "number of times to retry the failed test cases")
 	rootCmd.Flags().StringVarP(&email, "email", "m", "", "email to send reports")

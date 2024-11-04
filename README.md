@@ -65,7 +65,7 @@ Usage:
   itr [flags]
 
 Flags:
-  -c, --config_dir string                 path to external configuration files that are passed to test framework
+  -c, --config-dir string                 path to external configuration files that are passed to test framework
   -d, --disruptive-testcases string       Path to disruptive test cases to run
   -m, --email string                      email to send reports
   -e, --execution string                  how to execute the test cases
