@@ -26,10 +26,10 @@ import (
 	"github.com/vavuthu/itr/logger"
 )
 
-func RunEngine(execution, configDir, positiveTestCases, negativeTestCases, image string, queueLength, retry int, junitXML bool) {
+func RunEngine(execution, configDir, nonDisruptiveTestCases, disruptiveTestCases, image string, queueLength, retry int, junitXML bool) {
 	logger.Info("Starting ITR engine")
 	
-	filenames := []string{positiveTestCases, negativeTestCases}
+	filenames := []string{nonDisruptiveTestCases, disruptiveTestCases}
 	totalCount, err := utils.CountLines(filenames)
 	if err != nil {
 			logger.Error("error in reading file %s ", err)
@@ -37,24 +37,24 @@ func RunEngine(execution, configDir, positiveTestCases, negativeTestCases, image
 	}
 	statusquo.TotalTestCases = totalCount
 
-	if len(positiveTestCases) != 0 {
-		RunEngineParallely(execution, configDir, positiveTestCases, image, queueLength, retry, junitXML)
+	if len(nonDisruptiveTestCases) != 0 {
+		RunEngineParallely(execution, configDir, nonDisruptiveTestCases, image, queueLength, retry, junitXML)
 	}
 
-	if len(negativeTestCases) != 0 {
-		RunEngineSerially(execution, configDir, negativeTestCases, image, queueLength, retry, junitXML)
+	if len(disruptiveTestCases) != 0 {
+		RunEngineSerially(execution, configDir, disruptiveTestCases, image, queueLength, retry, junitXML)
 	}
 }
 
-func RunEngineParallely(execution, configDir, positiveTestCases, image string, queueLength, retry int, junitXML bool) {
+func RunEngineParallely(execution, configDir, nonDisruptiveTestCases, image string, queueLength, retry int, junitXML bool) {
 	logger.Info("Running engine parallely")
-	commands := payload.GenerateAllPodmanCommands(execution, configDir, positiveTestCases, image, junitXML)
+	commands := payload.GenerateAllPodmanCommands(execution, configDir, nonDisruptiveTestCases, image, junitXML)
 	launcher.LaunchInitiate(commands, configDir, queueLength, retry)
 }
 
-func RunEngineSerially(execution, configDir, negativeTestCases, image string, queueLength, retry int, junitXML bool) {
+func RunEngineSerially(execution, configDir, disruptiveTestCases, image string, queueLength, retry int, junitXML bool) {
 	logger.Info("Running engine serially")
-	commands := payload.GenerateAllPodmanCommands(execution, configDir, negativeTestCases, image, junitXML)
+	commands := payload.GenerateAllPodmanCommands(execution, configDir, disruptiveTestCases, image, junitXML)
 	queueLength = 1
 	launcher.LaunchInitiate(commands, configDir, queueLength, retry)
 }

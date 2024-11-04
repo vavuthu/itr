@@ -24,9 +24,9 @@ import (
 )
 
 func Flags(cmd *cobra.Command, args []string) error {
-	if cmd.Flag("positive_testcases").Changed || cmd.Flag("negative_testcases").Changed {
+	if cmd.Flag("non-disruptive-testcases").Changed || cmd.Flag("disruptive-testcases").Changed {
 		return nil
 	}
 
-	return fmt.Errorf("at least one of --positive_testcases or --negative_testcases must be provided")
+	return fmt.Errorf("at least one of --non-disruptive-testcases or --disruptive-testcases must be provided")
 }

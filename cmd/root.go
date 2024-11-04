@@ -39,16 +39,16 @@ var rootCmd = &cobra.Command{
 }
 
 var (
-	configDir			string
-	email				string
-	executionFile 		string
-	image 				string
-	junitXML 			bool
-	negativeTestCases 	string
-	positiveTestCases 	string
-	queueLength 		int
-	retry 				int
-	subject			    string
+	configDir				string
+	disruptiveTestCases			string
+	email					string
+	executionFile 				string
+	image 					string
+	junitXML 				bool
+	nonDisruptiveTestCases 			string
+	queueLength 				int
+	retry 					int
+	subject			    		string
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -68,8 +68,8 @@ func init() {
 	// when this action is called directly.
 
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.Flags().StringVarP(&positiveTestCases, "positive_testcases", "p", "", "Path to positive test cases to run")
-	rootCmd.Flags().StringVarP(&negativeTestCases, "negative_testcases", "n", "", "Path to negative test cases to run")
+	rootCmd.Flags().StringVarP(&nonDisruptiveTestCases, "non-disruptive-testcases", "n", "", "Path to non-disruptive test cases to run")
+	rootCmd.Flags().StringVarP(&disruptiveTestCases, "disruptive-testcases", "d", "", "Path to disruptive test cases to run")
 	rootCmd.Flags().StringVarP(&executionFile, "execution", "e", "", "how to execute the test cases")
 	rootCmd.Flags().StringVarP(&image, "image", "i", "", "image name of test framework that should exist in system")
 	rootCmd.Flags().StringVarP(&configDir, "config_dir", "c", "", "path to external configuration files that are passed to test framework")
@@ -86,7 +86,7 @@ func init() {
 func runCmd(cmd *cobra.Command, args []string) {
 	logger.Infof("Queue length: %d", queueLength)
 	config.InitializeConfig(getRetry(), getEmail(), getRunID(), getConfigDir(), getSubject())
-	engine.RunEngine(executionFile, configDir, positiveTestCases, negativeTestCases, image, queueLength, retry, junitXML)
+	engine.RunEngine(executionFile, configDir, nonDisruptiveTestCases, disruptiveTestCases, image, queueLength, retry, junitXML)
 }
 
 func validateFlags() {

@@ -41,10 +41,10 @@ func FormPayload(basePayload, testCase, testCaseName, configDir string, junitXML
 }
 
 // GenerateAllPodmanCommands generates podman commands for all test cases.
-func GenerateAllPodmanCommands(execution, configDir, positiveTestCases, image string, junitXML bool) []string {
+func GenerateAllPodmanCommands(execution, configDir, nonDisruptiveTestCases, image string, junitXML bool) []string {
 
 	// Read the content of the file
-	content, err := os.ReadFile(positiveTestCases)
+	content, err := os.ReadFile(nonDisruptiveTestCases)
 	if err != nil {
 		logger.Infof("Error in reading file %v", err)
 									
