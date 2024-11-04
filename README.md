@@ -66,6 +66,7 @@ Usage:
 
 Flags:
   -c, --config_dir string           path to external configuration files that are passed to test framework
+  -m, --email string                email to send reports
   -e, --execution string            how to execute the test cases
   -h, --help                        help for itr
   -i, --image string                image name of test framework that should exist in system
@@ -74,6 +75,7 @@ Flags:
   -p, --positive_testcases string   Path to positive test cases to run
   -q, --queue-length int            Queue length, number of test cases to run parallelly (default 5)
   -r, --retry int                   number of times to retry the failed test cases
+  -s, --subject string              email subject
   -t, --toggle                      Help message for toggle
 $ 
 ```
