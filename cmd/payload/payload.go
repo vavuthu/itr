@@ -26,7 +26,6 @@ import (
 
 var (
 	TestCaseName 	string
-	commands 		[]string
 )
 
 // FormPayload generates the payload content by replacing placeholders.
@@ -42,6 +41,8 @@ func FormPayload(basePayload, testCase, testCaseName, configDir string, junitXML
 
 // GenerateAllPodmanCommands generates podman commands for all test cases.
 func GenerateAllPodmanCommands(execution, configDir, nonDisruptiveTestCases, image string, junitXML bool) []string {
+
+	var commands []string
 
 	// Read the content of the file
 	content, err := os.ReadFile(nonDisruptiveTestCases)
