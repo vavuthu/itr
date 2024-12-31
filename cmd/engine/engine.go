@@ -1,4 +1,3 @@
-
 /*
 Copyright © 2023 vavuthu@redhat.com
 
@@ -23,6 +22,7 @@ import (
 	"github.com/vavuthu/itr/cmd/payload"
 	"github.com/vavuthu/itr/cmd/statusquo"
 	"github.com/vavuthu/itr/cmd/utils"
+	"github.com/vavuthu/itr/config"
 	"github.com/vavuthu/itr/logger"
 )
 
@@ -42,6 +42,9 @@ func RunEngine(execution, configDir, nonDisruptiveTestCases, disruptiveTestCases
 	}
 
 	if len(disruptiveTestCases) != 0 {
+		// set parameter isSerialEngineNeeded to false, so that launcher will invoke to generate
+		// report and sends email
+		config.UpdateConfigEnv("isSerialEngineNeeded", false)
 		RunEngineSerially(execution, configDir, disruptiveTestCases, image, queueLength, retry, junitXML)
 	}
 }

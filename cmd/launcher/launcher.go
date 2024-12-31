@@ -285,19 +285,23 @@ func LaunchInitiate(commands []string, configDir string, queueLength, retry int)
 	launch.LaunchCommands(queueLength, retry, stopChannel)
 	wg1.Wait()
 
-	endTime := time.Now()
-	totalTime := endTime.Sub(startTime)
+	if isSerialEngineNeeded, ok := config.AppConfig.Env["isSerialEngineNeeded"].(bool); !ok || !isSerialEngineNeeded {
 
-	// report generation
-	report.GenerateSummary(configDir)
-	report.GenerateHTMLReport(configDir, totalTime)
+		endTime := time.Now()
+		totalTime := endTime.Sub(startTime)
 
-	if config.AppConfig.EmailID != "" {
-		mail.SendMail()
-		logger.Info("Email sent successfully to ", config.AppConfig.EmailID)
-	}
+		// report generation
+		report.GenerateSummary(configDir)
+		report.GenerateHTMLReport(configDir, totalTime)
 
-	os.Exit(exitCode)
+		if config.AppConfig.EmailID != "" {
+			mail.SendMail()
+			logger.Info("Email sent successfully to ", config.AppConfig.EmailID)
+		}
+
+		os.Exit(exitCode)
+    }
+
 }
 
 // suffix epoch time for the file name

@@ -85,7 +85,10 @@ func init() {
 
 func runCmd(cmd *cobra.Command, args []string) {
 	logger.Infof("Queue length: %d", queueLength)
-	config.InitializeConfig(getRetry(), getEmail(), getRunID(), getConfigDir(), getSubject())
+	config.InitializeConfig(getRetry(), getEmail(), getRunID(), getConfigDir(), getSubject(), nil)
+	if len(disruptiveTestCases) != 0 {
+		config.UpdateConfigEnv("isSerialEngineNeeded", true)
+	}
 	engine.RunEngine(executionFile, configDir, nonDisruptiveTestCases, disruptiveTestCases, image, queueLength, retry, junitXML)
 }
 
