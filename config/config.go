@@ -23,15 +23,27 @@ type Config struct {
 	RunID string
 	Subject string
 	Retry int
+	Env map[string]interface{} // For dynamic parameters
 }
 
-var AppConfig Config
+var AppConfig = Config{
+    Env: make(map[string]interface{}), // Initialize Extras to avoid nil map
+}
 
-func InitializeConfig(retry int, email string, runid string, configdir string, subject string) {
+func InitializeConfig(retry int, email string, runid string, configdir string, subject string, env map[string]interface{}) {
 	AppConfig.Retry = retry
 	AppConfig.EmailID = email
 	AppConfig.RunID = runid
 	AppConfig.ConfigDir = configdir
 	AppConfig.Subject = subject
+	AppConfig.Env = env
+}
+
+// UpdateConfigEnv allows updating the Env field dynamically
+func UpdateConfigEnv(key string, value interface{}) {
+    if AppConfig.Env == nil {
+        AppConfig.Env = make(map[string]interface{}) // Ensure the map is initialized
+    }
+    AppConfig.Env[key] = value
 }
 
